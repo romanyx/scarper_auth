@@ -1,0 +1,6 @@
+[submodule "scraper_proto"]
+	path = proto
+	url = https://github.com/romanyx/scraper_proto
+[submodule "scraper_kit"]
+	path = kit
+	url = https://github.com/romanyx/scraper_kit
