@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"crypto/rsa"
 	"database/sql"
 	"flag"
+	"io/ioutil"
 	"log"
 	"net"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
+	_ "github.com/lib/pq"
 	"github.com/romanyx/scraper_auth/internal/auth"
 	grpcCli "github.com/romanyx/scraper_auth/internal/grpc"
 	"github.com/romanyx/scraper_auth/internal/reg"
@@ -18,11 +22,17 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+const (
+	alg = "RS256"
+)
+
 func main() {
 	var (
-		addr     = flag.String("addr", ":8080", "address of gRPC server")
-		dsn      = flag.String("dsn", "", "postgres database DSN")
-		tokenExp = flag.Duration("expire", time.Hour, "token live time")
+		addr           = flag.String("addr", ":8080", "address of gRPC server")
+		dsn            = flag.String("dsn", "", "postgres database DSN")
+		tokenExp       = flag.Duration("expire", time.Hour, "token live time")
+		privateKeyFile = flag.String("key", "", "private key file path")
+		keyID          = flag.String("id", "", "private key id")
 	)
 	db, err := sql.Open("postgres", *dsn)
 	if err != nil {
@@ -35,7 +45,23 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	srv := setupServer(db, *tokenExp)
+	keyContents, err := ioutil.ReadFile(*privateKeyFile)
+	if err != nil {
+		log.Fatalf("main : Reading auth private key : %v", err)
+	}
+
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(keyContents)
+	if err != nil {
+		log.Fatalf("main : Parsing auth private key : %v", err)
+	}
+
+	publicKeyLookup := authEng.NewSingleKeyFunc(*keyID, key.Public().(*rsa.PublicKey))
+	authenticator, err := authEng.NewAuthenticator(key, *keyID, alg, publicKeyLookup)
+	if err != nil {
+		log.Fatalf("main : Constructing authenticator : %v", err)
+	}
+
+	srv := setupServer(authenticator, db, *tokenExp)
 	s := grpc.NewServer()
 	proto.RegisterAuthServer(s, srv)
 	reflection.Register(s)
@@ -45,11 +71,9 @@ func main() {
 	}
 }
 
-func setupServer(db *sql.DB, exp time.Duration) proto.AuthServer {
-	var ath authEng.Authenticator
-
+func setupServer(ath *authEng.Authenticator, db *sql.DB, exp time.Duration) proto.AuthServer {
 	repo := postgres.NewRepository(db)
-	authSrv := auth.NewService(exp, repo, &ath)
+	authSrv := auth.NewService(exp, repo, ath)
 	regSrv := reg.NewService(repo, &informer{})
 
 	srv := grpcCli.NewServer(regSrv, authSrv)

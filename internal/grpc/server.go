@@ -2,7 +2,6 @@ package gprc
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/romanyx/scraper_auth/internal/auth"
@@ -47,7 +46,6 @@ func (s *Server) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.U
 	var f reg.Form
 	setForm(req, &f)
 	if err := s.RegSrv.Registrate(ctx, &f); err != nil {
-		fmt.Println(err)
 		switch v := errors.Cause(err).(type) {
 		case reg.ValidationErrors:
 			return nil, status.Error(codes.InvalidArgument, v.Error())
