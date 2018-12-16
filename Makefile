@@ -9,10 +9,10 @@ schema:
 	cd internal/storage/postgres/schema && go generate
 
 test:
-	go test -v -race `go list ./... | grep -v internal/docker | grep -v proto` 
+	go test -v -race `go list ./... | grep -v kit | grep -v proto` 
 
 cover:
-	go test `go list ./... | grep -v internal/docker | grep -v proto` -coverprofile cover.out.tmp && \
+	go test `go list ./... | grep -v kit | grep -v proto` -coverprofile cover.out.tmp && \
 		cat cover.out.tmp | grep -v "bindata.go" | grep -v "mock.go" | grep -v "main.go" > cover.out && \
 		go tool cover -func cover.out && \
 		rm cover.out.tmp && \

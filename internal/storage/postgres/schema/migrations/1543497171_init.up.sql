@@ -8,10 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
 	email 			VARCHAR (50) NOT NULL,
 	password_hash 		VARCHAR (72) NOT NULL,
 	status 			user_status NOT NULL,
-	token		 	CHAR (32) NOT NULL, 
+	token		 	CHAR (36) UNIQUE NOT NULL, 
 
 	/* timestamps */
-	token_expired_at		TIMESTAMP NOT NULL,
 	created_at			TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at			TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -22,7 +21,7 @@ CREATE INDEX IF NOT EXISTS users_token_idx ON users (token);
 CREATE TABLE IF NOT EXISTS resets (
 	id	SERIAL PRIMARY KEY,
 
-	token	VARCHAR (72) NOT NULL,
+	token	VARCHAR (36) UNIQUE NOT NULL,
 
 	user_id	INTEGER REFERENCES users (id), 
 
