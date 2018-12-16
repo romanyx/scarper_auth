@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
-CREATE INDEX IF NOT EXISTS users_verification_token_idx ON users (verification_token);
+CREATE INDEX IF NOT EXISTS users_token_idx ON users (token);
 
 CREATE TABLE IF NOT EXISTS resets (
 	id	SERIAL PRIMARY KEY,

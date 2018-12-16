@@ -15,10 +15,6 @@ const (
 	migrationsTable = "versions"
 )
 
-var (
-	m *migrate.Migrate
-)
-
 //go:generate go-bindata -prefix migrations/ -pkg schema -o migrations.bindata.go migrations/
 
 // Migrate migrates schema to given database
