@@ -7,6 +7,7 @@ import (
 
 	"github.com/romanyx/scraper_auth/internal/auth"
 	"github.com/romanyx/scraper_auth/internal/reg"
+	"github.com/romanyx/scraper_auth/internal/user"
 	"github.com/romanyx/scraper_auth/proto"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
@@ -99,29 +100,26 @@ func (f authenticaterFunc) Authenticate(ctx context.Context, email string, passw
 func Test_Server_SignUp(t *testing.T) {
 	tests := []struct {
 		name    string
-		regFunc func(context.Context, *reg.Form) error
+		regFunc func(context.Context, *reg.Form, *user.User) error
 		code    codes.Code
-		expect  *proto.UserResponse
 	}{
 		{
 			name: "ok",
-			regFunc: func(context.Context, *reg.Form) error {
+			regFunc: func(context.Context, *reg.Form, *user.User) error {
 				return nil
 			},
-			code:   codes.OK,
-			expect: &proto.UserResponse{},
+			code: codes.OK,
 		},
 		{
 			name: "validation error",
-			regFunc: func(context.Context, *reg.Form) error {
+			regFunc: func(context.Context, *reg.Form, *user.User) error {
 				return make(reg.ValidationErrors, 0)
 			},
 			code: codes.InvalidArgument,
 		},
 		{
 			name: "internal",
-
-			regFunc: func(context.Context, *reg.Form) error {
+			regFunc: func(context.Context, *reg.Form, *user.User) error {
 				return errors.New("mock error")
 			},
 			code: codes.Internal,
@@ -142,9 +140,7 @@ func Test_Server_SignUp(t *testing.T) {
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			got, err := s.SignUp(ctx, &req)
-			assert.Equal(t, got, tt.expect)
-
+			_, err := s.SignUp(ctx, &req)
 			st, ok := status.FromError(err)
 			assert.True(t, ok)
 			assert.Equal(t, st.Code(), tt.code)
@@ -152,8 +148,8 @@ func Test_Server_SignUp(t *testing.T) {
 	}
 }
 
-type registraterFunc func(context.Context, *reg.Form) error
+type registraterFunc func(context.Context, *reg.Form, *user.User) error
 
-func (rf registraterFunc) Registrate(c context.Context, f *reg.Form) error {
-	return rf(c, f)
+func (rf registraterFunc) Registrate(c context.Context, f *reg.Form, u *user.User) error {
+	return rf(c, f, u)
 }

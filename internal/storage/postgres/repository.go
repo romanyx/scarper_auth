@@ -8,13 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/romanyx/scraper_auth/internal/auth"
 	"github.com/romanyx/scraper_auth/internal/reg"
-	"github.com/twinj/uuid"
+	"github.com/romanyx/scraper_auth/internal/user"
 )
 
 const (
 	driverName = "postgres"
-
-	statusNew = "NEW"
 )
 
 // Repository holds crud actions.
@@ -34,7 +32,7 @@ func NewRepository(db *sql.DB) *Repository {
 const createQuery = `INSERT INTO users (email, status, token, account_id, password_hash) VALUES (:email, :status, :token, :account_id, :password_hash)`
 
 // Create insert user into database.
-func (r *Repository) Create(ctx context.Context, u *reg.User) (func() error, func() error, error) {
+func (r *Repository) Create(ctx context.Context, u *user.NewUser) (func() error, func() error, error) {
 	tx, err := r.db.Beginx()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "begin tx")
@@ -45,13 +43,10 @@ func (r *Repository) Create(ctx context.Context, u *reg.User) (func() error, fun
 		return nil, nil, errors.Wrap(err, "prepare named")
 	}
 
-	tk := uuid.NewV4()
-	u.Token = tk.String()
-
 	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
 		"account_id":    u.AccountID,
 		"email":         u.Email,
-		"status":        statusNew,
+		"status":        u.Status,
 		"password_hash": u.PasswordHash,
 		"token":         u.Token,
 	}); err != nil {
@@ -59,6 +54,27 @@ func (r *Repository) Create(ctx context.Context, u *reg.User) (func() error, fun
 	}
 
 	return tx.Commit, tx.Rollback, nil
+}
+
+const findQuery = "SELECT id, account_id, email, status, token, password_hash, created_at, updated_at FROM users WHERE account_id=:account_id"
+
+// Find finds user by email.
+func (r *Repository) Find(ctx context.Context, accountID string, u *user.User) error {
+	stmt, err := r.db.PrepareNamed(findQuery)
+	if err != nil {
+		return errors.Wrap(err, "prepare named")
+	}
+
+	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
+		"account_id": accountID,
+	}).Scan(&u.ID, &u.AccountID, &u.Email, &u.Status, &u.Token, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return auth.ErrNotFound
+		}
+		return errors.Wrap(err, "query row scan")
+	}
+
+	return nil
 }
 
 const uniqueQuery = "SELECT COUNT(*) FROM users WHERE email=:email"
@@ -83,7 +99,7 @@ func (r *Repository) Unique(ctx context.Context, email string) error {
 const emailFindQuery = "SELECT password_hash, account_id, status FROM users WHERE email=:email"
 
 // FindByEmail finds user by email.
-func (r *Repository) FindByEmail(ctx context.Context, email string, u *auth.User) error {
+func (r *Repository) FindByEmail(ctx context.Context, email string, u *user.User) error {
 	stmt, err := r.db.PrepareNamed(emailFindQuery)
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
@@ -99,7 +115,7 @@ func (r *Repository) FindByEmail(ctx context.Context, email string, u *auth.User
 		return errors.Wrap(err, "query row scan")
 	}
 
-	if s == statusNew {
+	if s == user.StatusNew {
 		return auth.ErrNotVerified
 	}
 

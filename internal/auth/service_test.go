@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/romanyx/scraper_auth/internal/user"
 	"github.com/romanyx/scraper_auth/kit/auth"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
@@ -20,7 +21,7 @@ func Test_Service(t *testing.T) {
 	tests := []struct {
 		name      string
 		tokenFunc func(context.Context, auth.Claims) (string, error)
-		findFunc  func(context.Context, string, *User) error
+		findFunc  func(context.Context, string, *user.User) error
 		wantErr   bool
 		expect    Token
 	}{
@@ -29,7 +30,7 @@ func Test_Service(t *testing.T) {
 			tokenFunc: func(context.Context, auth.Claims) (string, error) {
 				return "token", nil
 			},
-			findFunc: func(ctx context.Context, email string, u *User) error {
+			findFunc: func(ctx context.Context, email string, u *user.User) error {
 				u.PasswordHash = string(pw)
 				return nil
 			},
@@ -39,14 +40,14 @@ func Test_Service(t *testing.T) {
 		},
 		{
 			name: "not found",
-			findFunc: func(ctx context.Context, email string, u *User) error {
+			findFunc: func(ctx context.Context, email string, u *user.User) error {
 				return ErrNotFound
 			},
 			wantErr: true,
 		},
 		{
 			name: "wrong password",
-			findFunc: func(ctx context.Context, email string, u *User) error {
+			findFunc: func(ctx context.Context, email string, u *user.User) error {
 				return nil
 			},
 			wantErr: true,
@@ -56,7 +57,7 @@ func Test_Service(t *testing.T) {
 			tokenFunc: func(context.Context, auth.Claims) (string, error) {
 				return "", errors.New("mock err")
 			},
-			findFunc: func(ctx context.Context, email string, u *User) error {
+			findFunc: func(ctx context.Context, email string, u *user.User) error {
 				u.PasswordHash = string(pw)
 				return nil
 			},
@@ -92,8 +93,8 @@ func (f tokenGeneratorFunc) GenerateToken(ctx context.Context, c auth.Claims) (s
 	return f(ctx, c)
 }
 
-type emailFinderFunc func(context.Context, string, *User) error
+type emailFinderFunc func(context.Context, string, *user.User) error
 
-func (f emailFinderFunc) FindByEmail(ctx context.Context, email string, u *User) error {
+func (f emailFinderFunc) FindByEmail(ctx context.Context, email string, u *user.User) error {
 	return f(ctx, email, u)
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/romanyx/scraper_auth/internal/user"
 	"github.com/romanyx/scraper_auth/kit/auth"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,7 +30,7 @@ type TokenGenerator interface {
 
 // EmailFinder allows to find user by it's email.
 type EmailFinder interface {
-	FindByEmail(ctx context.Context, email string, u *User) error
+	FindByEmail(ctx context.Context, email string, u *user.User) error
 }
 
 // Service holds required data for user
@@ -54,7 +55,7 @@ func NewService(exp time.Duration, f EmailFinder, tg TokenGenerator) *Service {
 // Authenticate allows to authenticate user by gine email and password
 // and set t Token value as generated token.
 func (s *Service) Authenticate(ctx context.Context, email, password string, t *Token) error {
-	var u User
+	var u user.User
 	if err := s.FindByEmail(ctx, email, &u); err != nil {
 		return errors.Wrap(err, "find user by email")
 	}
@@ -81,10 +82,4 @@ func (s *Service) Authenticate(ctx context.Context, email, password string, t *T
 // Token holds token data.
 type Token struct {
 	Token string
-}
-
-// User is a column in database.
-type User struct {
-	AccountID    string
-	PasswordHash string
 }

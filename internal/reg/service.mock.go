@@ -6,6 +6,7 @@ package reg
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	user "github.com/romanyx/scraper_auth/internal/user"
 )
 
 // Mock of Validater interface
@@ -60,7 +61,7 @@ func (_m *MockInformer) EXPECT() *_MockInformerRecorder {
 	return _m.recorder
 }
 
-func (_m *MockInformer) Inform(ctx context.Context, u *User) error {
+func (_m *MockInformer) Inform(ctx context.Context, u *user.User) error {
 	ret := _m.ctrl.Call(_m, "Inform", ctx, u)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -91,7 +92,7 @@ func (_m *MockRepository) EXPECT() *_MockRepositoryRecorder {
 	return _m.recorder
 }
 
-func (_m *MockRepository) Create(ctx context.Context, u *User) (func() error, func() error, error) {
+func (_m *MockRepository) Create(ctx context.Context, u *user.NewUser) (func() error, func() error, error) {
 	ret := _m.ctrl.Call(_m, "Create", ctx, u)
 	ret0, _ := ret[0].(func() error)
 	ret1, _ := ret[1].(func() error)
@@ -101,6 +102,16 @@ func (_m *MockRepository) Create(ctx context.Context, u *User) (func() error, fu
 
 func (_mr *_MockRepositoryRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Create", arg0, arg1)
+}
+
+func (_m *MockRepository) Find(ctx context.Context, accountID string, u *user.User) error {
+	ret := _m.ctrl.Call(_m, "Find", ctx, accountID, u)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockRepositoryRecorder) Find(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Find", arg0, arg1, arg2)
 }
 
 func (_m *MockRepository) Unique(ctx context.Context, email string) error {

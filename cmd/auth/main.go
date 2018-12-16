@@ -16,6 +16,7 @@ import (
 	grpcCli "github.com/romanyx/scraper_auth/internal/grpc"
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/storage/postgres"
+	"github.com/romanyx/scraper_auth/internal/user"
 	authEng "github.com/romanyx/scraper_auth/kit/auth"
 	"github.com/romanyx/scraper_auth/proto"
 	"google.golang.org/grpc"
@@ -34,6 +35,7 @@ func main() {
 		privateKeyFile = flag.String("key", "", "private key file path")
 		keyID          = flag.String("id", "", "private key id")
 	)
+
 	db, err := sql.Open("postgres", *dsn)
 	if err != nil {
 		log.Fatalf("failed to connect db: %v\n", err)
@@ -82,6 +84,6 @@ func setupServer(ath *authEng.Authenticator, db *sql.DB, exp time.Duration) prot
 
 type informer struct{}
 
-func (i *informer) Inform(context.Context, *reg.User) error {
+func (i *informer) Inform(context.Context, *user.User) error {
 	return nil
 }

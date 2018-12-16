@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
+	user "github.com/romanyx/scraper_auth/internal/user"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,10 +19,9 @@ func Test_Service(t *testing.T) {
 	}
 	tests := []struct {
 		name           string
-		form           Form
 		validateFunc   func(context.Context, *Form) error
 		repositoryFunc func(mock *MockRepository)
-		informFunc     func(context.Context, *User) error
+		informFunc     func(context.Context, *user.User) error
 		wantErr        bool
 	}{
 		{
@@ -29,11 +29,12 @@ func Test_Service(t *testing.T) {
 			validateFunc: func(context.Context, *Form) error {
 				return nil
 			},
-			informFunc: func(context.Context, *User) error {
+			informFunc: func(context.Context, *user.User) error {
 				return nil
 			},
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(commit, nil, nil)
+				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 		},
 		{
@@ -45,12 +46,23 @@ func Test_Service(t *testing.T) {
 			wantErr:        true,
 		},
 		{
-			name: "creation",
+			name: "create",
 			validateFunc: func(context.Context, *Form) error {
 				return nil
 			},
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, nil, errors.New("mock error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "find",
+			validateFunc: func(context.Context, *Form) error {
+				return nil
+			},
+			repositoryFunc: func(m *MockRepository) {
+				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, rollback, nil)
+				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
 			},
 			wantErr: true,
 		},
@@ -61,8 +73,9 @@ func Test_Service(t *testing.T) {
 			},
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, rollback, nil)
+				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
-			informFunc: func(context.Context, *User) error {
+			informFunc: func(context.Context, *user.User) error {
 				return errors.New("mock error")
 			},
 			wantErr: true,
@@ -83,7 +96,12 @@ func Test_Service(t *testing.T) {
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			err := s.Registrate(ctx, &tt.form)
+			var usr user.User
+			form := Form{
+				Email:     "john@example.com",
+				AccountID: "account_id",
+			}
+			err := s.Registrate(ctx, &form, &usr)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -94,9 +112,9 @@ func Test_Service(t *testing.T) {
 	}
 }
 
-type informerFunc func(context.Context, *User) error
+type informerFunc func(context.Context, *user.User) error
 
-func (f informerFunc) Inform(ctx context.Context, u *User) error {
+func (f informerFunc) Inform(ctx context.Context, u *user.User) error {
 	return f(ctx, u)
 }
 

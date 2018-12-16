@@ -2,10 +2,13 @@ package gprc
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	"github.com/romanyx/scraper_auth/internal/auth"
 	"github.com/romanyx/scraper_auth/internal/reg"
+	"github.com/romanyx/scraper_auth/internal/user"
 	"github.com/romanyx/scraper_auth/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,7 +20,7 @@ const (
 
 // Registrater is a registration serviceration service.
 type Registrater interface {
-	Registrate(context.Context, *reg.Form) error
+	Registrate(context.Context, *reg.Form, *user.User) error
 }
 
 // Authenticater logins user.
@@ -44,17 +47,20 @@ func NewServer(r Registrater, a Authenticater) *Server {
 // SignUp registration implementation.
 func (s *Server) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.UserResponse, error) {
 	var f reg.Form
+	var u user.User
 	setForm(req, &f)
-	if err := s.RegSrv.Registrate(ctx, &f); err != nil {
+	if err := s.RegSrv.Registrate(ctx, &f, &u); err != nil {
 		switch v := errors.Cause(err).(type) {
 		case reg.ValidationErrors:
 			return nil, status.Error(codes.InvalidArgument, v.Error())
 		default:
+			fmt.Println(err)
 			return nil, status.Error(codes.Internal, internalErrMsg)
 		}
 	}
 
 	var r proto.UserResponse
+	setResp(&r, &u)
 	return &r, nil
 }
 
@@ -63,6 +69,16 @@ func setForm(req *proto.SignUpRequest, f *reg.Form) {
 	f.AccountID = req.AccountId
 	f.Password = req.Password
 	f.PasswordConfirmation = req.PasswordConfirmation
+}
+
+func setResp(resp *proto.UserResponse, u *user.User) {
+	resp.AccountId = u.AccountID
+	resp.Status = proto.UserStatus(proto.UserStatus_value[u.Status])
+	resp.Email = u.Email
+	ca, _ := ptypes.TimestampProto(u.CreatedAt)
+	resp.CreatedAt = ca
+	ua, _ := ptypes.TimestampProto(u.UpdatedAt)
+	resp.UpdatedAt = ua
 }
 
 // SignIn authentication implementation.

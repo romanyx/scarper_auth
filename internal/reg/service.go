@@ -2,8 +2,11 @@ package reg
 
 import (
 	"context"
+	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/romanyx/scraper_auth/internal/user"
+	"github.com/twinj/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,6 +18,8 @@ var (
 	// ErrEmailExists returns when given email is already
 	// present in database.
 	ErrEmailExists = errors.New("email not found")
+
+	uuidMx = sync.Mutex{}
 )
 
 // ValidationErrors holds validation errors
@@ -40,12 +45,13 @@ type Validater interface {
 
 // Informer send token to verify email.
 type Informer interface {
-	Inform(ctx context.Context, u *User) error
+	Inform(ctx context.Context, u *user.User) error
 }
 
 // Repository allows to work with database.
 type Repository interface {
-	Create(ctx context.Context, u *User) (func() error, func() error, error)
+	Create(ctx context.Context, u *user.NewUser) (func() error, func() error, error)
+	Find(ctx context.Context, accountID string, u *user.User) error
 	Unique(ctx context.Context, email string) error
 }
 
@@ -55,6 +61,7 @@ type Service struct {
 	Validater
 	Repository
 	Informer
+	*sync.Mutex
 }
 
 // NewService factory prepares service for
@@ -66,18 +73,19 @@ func NewService(r Repository, i Informer) *Service {
 		Validater: ozzo{
 			Repository: r,
 		},
+		Mutex: &sync.Mutex{},
 	}
 
 	return &s
 }
 
 // Registrate registrates user.
-func (s *Service) Registrate(ctx context.Context, f *Form) error {
+func (s *Service) Registrate(ctx context.Context, f *Form, usr *user.User) error {
 	if err := s.Validate(ctx, f); err != nil {
 		return errors.Wrap(err, "validate user")
 	}
 
-	u := User{
+	u := user.NewUser{
 		AccountID: f.AccountID,
 		Email:     f.Email,
 	}
@@ -86,18 +94,31 @@ func (s *Service) Registrate(ctx context.Context, f *Form) error {
 		return errors.Wrap(err, "generating password hash")
 	}
 	u.PasswordHash = string(pw)
+	u.Status = user.StatusNew
+	u.Token = uuidStr()
 
 	commit, rollback, err := s.Create(ctx, &u)
 	if err != nil {
 		return errors.Wrap(err, "create user")
 	}
 
-	if err := s.Inform(ctx, &u); err != nil {
+	if err := s.Find(ctx, f.AccountID, usr); err != nil {
+		rollback()
+		return errors.Wrap(err, "find user")
+	}
+
+	if err := s.Inform(ctx, usr); err != nil {
 		rollback()
 		return errors.Wrap(err, "inform")
 	}
 
 	return commit()
+}
+
+func uuidStr() string {
+	uuidMx.Lock()
+	defer uuidMx.Unlock()
+	return uuid.NewV4().String()
 }
 
 // Form is a registraton form.
@@ -106,14 +127,6 @@ type Form struct {
 	AccountID            string
 	Password             string
 	PasswordConfirmation string
-}
-
-// User used to insert model.
-type User struct {
-	Email        string
-	AccountID    string
-	PasswordHash string
-	Token        string
 }
 
 type ozzo struct {
