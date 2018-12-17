@@ -2,13 +2,13 @@ package gprc
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	"github.com/romanyx/scraper_auth/internal/auth"
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/user"
+	"github.com/romanyx/scraper_auth/internal/verify"
 	"github.com/romanyx/scraper_auth/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,7 +18,7 @@ const (
 	internalErrMsg = "internal error"
 )
 
-// Registrater is a registration serviceration service.
+// Registrater is a registration service.
 type Registrater interface {
 	Registrate(context.Context, *reg.Form, *user.User) error
 }
@@ -28,17 +28,24 @@ type Authenticater interface {
 	Authenticate(ctx context.Context, email, password string, t *auth.Token) error
 }
 
+// Verifier allows to verify user by token.
+type Verifier interface {
+	Verify(ctx context.Context, token string, u *user.User) error
+}
+
 // Server is a auth grpc server implementation.
 type Server struct {
 	RegSrv  Registrater
 	AuthSrv Authenticater
+	VrfSrv  Verifier
 }
 
 // NewServer factory build grpc server implementation.
-func NewServer(r Registrater, a Authenticater) *Server {
+func NewServer(r Registrater, a Authenticater, v Verifier) *Server {
 	s := Server{
 		RegSrv:  r,
 		AuthSrv: a,
+		VrfSrv:  v,
 	}
 
 	return &s
@@ -54,7 +61,6 @@ func (s *Server) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.U
 		case reg.ValidationErrors:
 			return nil, status.Error(codes.InvalidArgument, v.Error())
 		default:
-			fmt.Println(err)
 			return nil, status.Error(codes.Internal, internalErrMsg)
 		}
 	}
@@ -102,8 +108,21 @@ func (s *Server) SignIn(ctx context.Context, req *proto.SignInRequest) (*proto.S
 }
 
 // Verify verifies users email.
-func (s *Server) Verify(context.Context, *proto.EmailVerifyRequest) (*proto.UserResponse, error) {
-	return nil, nil
+func (s *Server) Verify(ctx context.Context, req *proto.EmailVerifyRequest) (*proto.UserResponse, error) {
+	var u user.User
+
+	if err := s.VrfSrv.Verify(ctx, req.Token, &u); err != nil {
+		switch err := errors.Cause(err); err {
+		case verify.ErrNotFound:
+			return nil, status.Error(codes.NotFound, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, internalErrMsg)
+		}
+	}
+
+	var r proto.UserResponse
+	setResp(&r, &u)
+	return &r, nil
 }
 
 // Reset resets users password.

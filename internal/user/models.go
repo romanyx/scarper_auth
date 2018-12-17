@@ -16,7 +16,7 @@ type User struct {
 	Email        string
 	Status       string
 	PasswordHash string
-	Token        string
+	Token        *string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

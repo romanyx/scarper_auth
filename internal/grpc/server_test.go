@@ -8,6 +8,7 @@ import (
 	"github.com/romanyx/scraper_auth/internal/auth"
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/user"
+	"github.com/romanyx/scraper_auth/internal/verify"
 	"github.com/romanyx/scraper_auth/proto"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
@@ -72,7 +73,7 @@ func Test_Server_SignIn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			s := NewServer(nil, authenticaterFunc(tt.authFunc))
+			s := NewServer(nil, authenticaterFunc(tt.authFunc), nil)
 
 			req := proto.SignInRequest{
 				Email:    "email",
@@ -131,7 +132,7 @@ func Test_Server_SignUp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			s := NewServer(registraterFunc(tt.regFunc), nil)
+			s := NewServer(registraterFunc(tt.regFunc), nil, nil)
 
 			req := proto.SignUpRequest{
 				Email:    "email",
@@ -152,4 +153,60 @@ type registraterFunc func(context.Context, *reg.Form, *user.User) error
 
 func (rf registraterFunc) Registrate(c context.Context, f *reg.Form, u *user.User) error {
 	return rf(c, f, u)
+}
+
+func Test_Server_Verify(t *testing.T) {
+	tests := []struct {
+		name       string
+		verifyFunc func(context.Context, string, *user.User) error
+		code       codes.Code
+	}{
+		{
+			name: "ok",
+			verifyFunc: func(context.Context, string, *user.User) error {
+				return nil
+			},
+			code: codes.OK,
+		},
+		{
+			name: "not found",
+			verifyFunc: func(context.Context, string, *user.User) error {
+				return verify.ErrNotFound
+			},
+			code: codes.NotFound,
+		},
+		{
+			name: "internal",
+			verifyFunc: func(context.Context, string, *user.User) error {
+				return errors.New("mock error")
+			},
+			code: codes.Internal,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			s := NewServer(nil, nil, verifierFunc(tt.verifyFunc))
+
+			req := proto.EmailVerifyRequest{
+				Token: "token",
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			_, err := s.Verify(ctx, &req)
+			st, ok := status.FromError(err)
+			assert.True(t, ok)
+			assert.Equal(t, st.Code(), tt.code)
+		})
+	}
+}
+
+type verifierFunc func(context.Context, string, *user.User) error
+
+func (f verifierFunc) Verify(ctx context.Context, token string, u *user.User) error {
+	return f(ctx, token, u)
 }

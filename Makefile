@@ -5,6 +5,10 @@ all: schema proto
 proto:
 	cd proto/ && make users
 
+mocks:
+	cd internal/verify && go generate
+	cd internal/reg && go generate
+
 schema:
 	cd internal/storage/postgres/schema && go generate
 

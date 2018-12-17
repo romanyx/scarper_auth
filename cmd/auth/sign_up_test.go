@@ -25,7 +25,7 @@ func TestSignUp(t *testing.T) {
 
 		t.Log("\tTest:0\tshould register user.")
 		{
-			ctx, cancel := context.WithTimeout(context.Background(), caseTiemout)
+			ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
 			defer cancel()
 			_, err := cli.SignUp(ctx, &proto.SignUpRequest{
 				Email:                "john@example.com",

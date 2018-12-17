@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+//go:generate mockgen -source=service.go -package=reg -destination=service.mock.go
+
 const (
 	validationErrMsg = "you have validation errors"
 )

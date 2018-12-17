@@ -9,6 +9,7 @@ import (
 	"github.com/romanyx/scraper_auth/internal/auth"
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/user"
+	"github.com/romanyx/scraper_auth/internal/verify"
 )
 
 const (
@@ -117,6 +118,50 @@ func (r *Repository) FindByEmail(ctx context.Context, email string, u *user.User
 
 	if s == user.StatusNew {
 		return auth.ErrNotVerified
+	}
+
+	return nil
+}
+
+const tokenFindQuery = "SELECT id, account_id FROM users WHERE token=:token"
+
+// FindByToken finds user by token.
+func (r *Repository) FindByToken(ctx context.Context, token string, u *user.User) error {
+	stmt, err := r.db.PrepareNamed(tokenFindQuery)
+	if err != nil {
+		return errors.Wrap(err, "prepare named")
+	}
+
+	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
+		"token": token,
+	}).Scan(&u.ID, &u.AccountID); err != nil {
+		if err == sql.ErrNoRows {
+			return verify.ErrNotFound
+		}
+		return errors.Wrap(err, "query row scan")
+	}
+
+	return nil
+}
+
+const verifyQuery = `UPDATE users SET token=null, status='VERIFIED', updated_at=now() WHERE id=:id`
+
+// Verify verifies user.
+func (r *Repository) Verify(ctx context.Context, id int32) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "begin tx")
+	}
+
+	stmt, err := tx.PrepareNamed(verifyQuery)
+	if err != nil {
+		return errors.Wrap(err, "prepare named")
+	}
+
+	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
+		"id": id,
+	}); err != nil {
+		return errors.Wrap(err, "exec context")
 	}
 
 	return nil

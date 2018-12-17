@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
 	email 			VARCHAR (50) NOT NULL,
 	password_hash 		VARCHAR (72) NOT NULL,
 	status 			user_status NOT NULL,
-	token		 	CHAR (36) UNIQUE NOT NULL, 
+	token		 	CHAR (36) UNIQUE, 
 
 	/* timestamps */
 	created_at			TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
