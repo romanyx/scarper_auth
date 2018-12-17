@@ -11,18 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	userData = `
-users:
-  - email: john@example.com
-    account_id: 492c9a6d-255e-4a61-a460-2d622d4c6e96
-    password_hash: $2a$10$nhWT4xXRkk0aoqOMOs7UyOBJ1f/XXFGt5rYDBo9CAQnruBvg.U3d6
-    status: VERIFIED
-    token: 492c9a6d-255e-4a61-a460-2d622d4c6e96
-`
-)
-
-func TestSignIn(t *testing.T) {
+func TestReset(t *testing.T) {
 	t.Log("with prepared server and client.")
 	{
 		db, teardown := postgresDB(t)
@@ -39,20 +28,15 @@ func TestSignIn(t *testing.T) {
 		defer conn.Close()
 		cli := proto.NewAuthClient(conn)
 
-		t.Log("\ttest:0\tshould sign in user.")
+		t.Log("\ttest:0\tcreate reset token.")
 		{
 			ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
 			defer cancel()
-			resp, err := cli.SignIn(ctx, &proto.SignInRequest{
-				Email:    "john@example.com",
-				Password: "password",
+			resp, err := cli.Reset(ctx, &proto.PasswordResetRequest{
+				Email: "john@example.com",
 			})
 			assert.Nil(t, err)
 			assert.NotNil(t, resp)
-
-			claims, err := a.ParseClaims(ctx, resp.Token)
-			assert.Nil(t, err)
-			assert.Equal(t, claims.Subject, "492c9a6d-255e-4a61-a460-2d622d4c6e96")
 		}
 	}
 }

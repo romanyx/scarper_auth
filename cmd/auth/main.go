@@ -13,8 +13,10 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	_ "github.com/lib/pq"
 	"github.com/romanyx/scraper_auth/internal/auth"
+	"github.com/romanyx/scraper_auth/internal/change"
 	grpcCli "github.com/romanyx/scraper_auth/internal/grpc"
 	"github.com/romanyx/scraper_auth/internal/reg"
+	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/storage/postgres"
 	"github.com/romanyx/scraper_auth/internal/user"
 	"github.com/romanyx/scraper_auth/internal/verify"
@@ -79,8 +81,10 @@ func setupServer(ath *authEng.Authenticator, db *sql.DB, exp time.Duration) prot
 	authSrv := auth.NewService(exp, repo, ath)
 	regSrv := reg.NewService(repo, &informer{})
 	vrfSrv := verify.NewService(repo)
+	rstSrv := reset.NewService(repo, &informer{}, exp)
+	chgSrv := change.NewService(repo)
 
-	srv := grpcCli.NewServer(regSrv, authSrv, vrfSrv)
+	srv := grpcCli.NewServer(regSrv, authSrv, vrfSrv, rstSrv, chgSrv)
 	return srv
 }
 

@@ -6,7 +6,9 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	"github.com/romanyx/scraper_auth/internal/auth"
+	"github.com/romanyx/scraper_auth/internal/change"
 	"github.com/romanyx/scraper_auth/internal/reg"
+	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/user"
 	"github.com/romanyx/scraper_auth/internal/verify"
 	"github.com/romanyx/scraper_auth/proto"
@@ -33,19 +35,34 @@ type Verifier interface {
 	Verify(ctx context.Context, token string, u *user.User) error
 }
 
+// PwdReseter allows to send user password reset
+// instructions.
+type PwdReseter interface {
+	Reset(ctx context.Context, email string) error
+}
+
+// PwdChanger allows to change password.
+type PwdChanger interface {
+	Change(ctx context.Context, token string, form *change.Form, u *user.User) error
+}
+
 // Server is a auth grpc server implementation.
 type Server struct {
 	RegSrv  Registrater
 	AuthSrv Authenticater
 	VrfSrv  Verifier
+	RstSrv  PwdReseter
+	ChgSrv  PwdChanger
 }
 
 // NewServer factory build grpc server implementation.
-func NewServer(r Registrater, a Authenticater, v Verifier) *Server {
+func NewServer(r Registrater, a Authenticater, v Verifier, rst PwdReseter, c PwdChanger) *Server {
 	s := Server{
 		RegSrv:  r,
 		AuthSrv: a,
 		VrfSrv:  v,
+		RstSrv:  rst,
+		ChgSrv:  c,
 	}
 
 	return &s
@@ -125,7 +142,46 @@ func (s *Server) Verify(ctx context.Context, req *proto.EmailVerifyRequest) (*pr
 	return &r, nil
 }
 
-// Reset resets users password.
-func (s *Server) Reset(context.Context, *proto.PasswordResetRequest) (*proto.PasswordResetResponse, error) {
-	return nil, nil
+// Reset send password reset instructions..
+func (s *Server) Reset(ctx context.Context, req *proto.PasswordResetRequest) (*proto.PasswordResetResponse, error) {
+	if err := s.RstSrv.Reset(ctx, req.Email); err != nil {
+		switch err := errors.Cause(err); err {
+		case reset.ErrNotFound:
+			return nil, status.Error(codes.NotFound, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, internalErrMsg)
+		}
+	}
+
+	var r proto.PasswordResetResponse
+	return &r, nil
+}
+
+// Change changes users password.
+func (s *Server) Change(ctx context.Context, req *proto.PasswordChangeRequest) (*proto.UserResponse, error) {
+	var u user.User
+	form := change.Form{
+		Password:             req.Password,
+		PasswordConfirmation: req.PasswordConfirmation,
+	}
+
+	if err := s.ChgSrv.Change(ctx, req.Token, &form, &u); err != nil {
+		switch v := errors.Cause(err).(type) {
+		case change.ValidationErrors:
+			return nil, status.Error(codes.InvalidArgument, v.Error())
+		default:
+			switch err := errors.Cause(err); err {
+			case change.ErrNotFound:
+				return nil, status.Error(codes.NotFound, err.Error())
+			case change.ErrTokenExpired:
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			default:
+				return nil, status.Error(codes.Internal, internalErrMsg)
+			}
+		}
+	}
+
+	var r proto.UserResponse
+	setResp(&r, &u)
+	return &r, nil
 }

@@ -25,7 +25,7 @@ func Test_Service_Verify(t *testing.T) {
 			},
 		},
 		{
-			name: "find",
+			name: "find by token",
 			mockFunc: func(m *MockRepository) {
 				m.EXPECT().FindByToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
 			},

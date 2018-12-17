@@ -63,7 +63,6 @@ type Service struct {
 	Validater
 	Repository
 	Informer
-	*sync.Mutex
 }
 
 // NewService factory prepares service for
@@ -75,7 +74,6 @@ func NewService(r Repository, i Informer) *Service {
 		Validater: ozzo{
 			Repository: r,
 		},
-		Mutex: &sync.Mutex{},
 	}
 
 	return &s

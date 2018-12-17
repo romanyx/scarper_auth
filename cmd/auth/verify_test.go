@@ -28,7 +28,7 @@ func TestVerify(t *testing.T) {
 		defer conn.Close()
 		cli := proto.NewAuthClient(conn)
 
-		t.Log("\tTest:0\tshould verify user.")
+		t.Log("\ttest:0\tshould verify user.")
 		{
 			ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
 			defer cancel()

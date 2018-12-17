@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS resets (
 	user_id	INTEGER REFERENCES users (id), 
 
 	/* timestamps */
-	token_expired_at	TIMESTAMP NOT NULL,
+	expired_at		TIMESTAMP NOT NULL,
 	created_at		TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at		TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

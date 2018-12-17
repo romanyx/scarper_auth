@@ -23,7 +23,7 @@ func TestSignUp(t *testing.T) {
 		defer conn.Close()
 		cli := proto.NewAuthClient(conn)
 
-		t.Log("\tTest:0\tshould register user.")
+		t.Log("\ttest:0\tshould register user.")
 		{
 			ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
 			defer cancel()
