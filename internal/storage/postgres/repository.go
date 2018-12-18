@@ -93,7 +93,11 @@ func (r *Repository) Unique(ctx context.Context, email string) error {
 	var c int
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
 		"email": email,
-	}).Scan(c); err != nil {
+	}).Scan(&c); err != nil {
+		return errors.Wrap(err, "scan count")
+	}
+
+	if c > 0 {
 		return reg.ErrEmailExists
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/user"
+	"github.com/romanyx/scraper_auth/internal/validation"
 	"github.com/romanyx/scraper_auth/internal/verify"
 	"github.com/romanyx/scraper_auth/proto"
 	"google.golang.org/grpc/codes"
@@ -75,7 +76,7 @@ func (s *Server) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.U
 	setForm(req, &f)
 	if err := s.RegSrv.Registrate(ctx, &f, &u); err != nil {
 		switch v := errors.Cause(err).(type) {
-		case reg.ValidationErrors:
+		case validation.Errors:
 			return nil, status.Error(codes.InvalidArgument, v.Error())
 		default:
 			return nil, status.Error(codes.Internal, internalErrMsg)
@@ -167,7 +168,7 @@ func (s *Server) Change(ctx context.Context, req *proto.PasswordChangeRequest) (
 
 	if err := s.ChgSrv.Change(ctx, req.Token, &form, &u); err != nil {
 		switch v := errors.Cause(err).(type) {
-		case change.ValidationErrors:
+		case validation.Errors:
 			return nil, status.Error(codes.InvalidArgument, v.Error())
 		default:
 			switch err := errors.Cause(err); err {

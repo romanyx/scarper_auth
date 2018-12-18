@@ -19,6 +19,7 @@ import (
 	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/storage/postgres"
 	"github.com/romanyx/scraper_auth/internal/user"
+	"github.com/romanyx/scraper_auth/internal/validation"
 	"github.com/romanyx/scraper_auth/internal/verify"
 	authEng "github.com/romanyx/scraper_auth/kit/auth"
 	"github.com/romanyx/scraper_auth/proto"
@@ -79,10 +80,10 @@ func main() {
 func setupServer(ath *authEng.Authenticator, db *sql.DB, exp time.Duration) proto.AuthServer {
 	repo := postgres.NewRepository(db)
 	authSrv := auth.NewService(exp, repo, ath)
-	regSrv := reg.NewService(repo, &informer{})
+	regSrv := reg.NewService(repo, validation.NewReg(repo), &informer{})
 	vrfSrv := verify.NewService(repo)
 	rstSrv := reset.NewService(repo, &informer{}, exp)
-	chgSrv := change.NewService(repo)
+	chgSrv := change.NewService(repo, validation.NewChange())
 
 	srv := grpcCli.NewServer(regSrv, authSrv, vrfSrv, rstSrv, chgSrv)
 	return srv

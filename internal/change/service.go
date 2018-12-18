@@ -2,28 +2,20 @@ package change
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/romanyx/scraper_auth/internal/user"
-	"github.com/twinj/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 //go:generate mockgen -source=service.go -package=change -destination=service.mock.go
-
-const (
-	validationErrMsg = "you have validation errors"
-)
 
 var (
 	// ErrNotFound returns when token not found.
 	ErrNotFound = errors.New("token not found")
 	// ErrTokenExpired returns when token is expired.
 	ErrTokenExpired = errors.New("token expired")
-
-	uuidMx = sync.Mutex{}
 )
 
 // Form contains data
@@ -45,22 +37,6 @@ var (
 	ErrEmailExists = errors.New("email not found")
 )
 
-// ValidationErrors holds validation errors
-// list.
-type ValidationErrors []ValidationError
-
-// Error implements error interface to return
-// slice as error for futher manipulations.
-func (v ValidationErrors) Error() string {
-	return validationErrMsg
-}
-
-// ValidationError holds field and message
-// of validation exception.
-type ValidationError struct {
-	Field, Message string
-}
-
 // Validater validates user fields.
 type Validater interface {
 	Validate(ctx context.Context, f *Form) error
@@ -81,10 +57,10 @@ type Service struct {
 
 // NewService factory returns ready to user
 // service.
-func NewService(r Repository) *Service {
+func NewService(r Repository, v Validater) *Service {
 	s := Service{
 		Repository: r,
-		Validater:  &ozzo{},
+		Validater:  v,
 	}
 
 	return &s
@@ -119,17 +95,4 @@ func (s *Service) Change(ctx context.Context, token string, form *Form, u *user.
 	}
 
 	return nil
-}
-
-func uuidStr() string {
-	uuidMx.Lock()
-	defer uuidMx.Unlock()
-	return uuid.NewV4().String()
-}
-
-type ozzo struct{}
-
-func (v ozzo) Validate(ctx context.Context, form *Form) error {
-	return nil
-
 }

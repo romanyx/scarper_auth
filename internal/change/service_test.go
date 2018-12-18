@@ -107,8 +107,7 @@ func Test_Service_Change(t *testing.T) {
 			defer ctrl.Finish()
 			repo := NewMockRepository(ctrl)
 			tt.repoFunc(repo)
-			s := NewService(repo)
-			s.Validater = validaterFunc(tt.validateFunc)
+			s := NewService(repo, validaterFunc(tt.validateFunc))
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()

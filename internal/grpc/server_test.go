@@ -10,6 +10,7 @@ import (
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/user"
+	"github.com/romanyx/scraper_auth/internal/validation"
 	"github.com/romanyx/scraper_auth/internal/verify"
 	"github.com/romanyx/scraper_auth/proto"
 	"github.com/stretchr/testify/assert"
@@ -116,7 +117,7 @@ func Test_Server_SignUp(t *testing.T) {
 		{
 			name: "validation error",
 			regFunc: func(context.Context, *reg.Form, *user.User) error {
-				return make(reg.ValidationErrors, 0)
+				return make(validation.Errors, 0)
 			},
 			code: codes.InvalidArgument,
 		},
@@ -299,7 +300,7 @@ func Test_Server_Change(t *testing.T) {
 		{
 			name: "validation errors",
 			changeFunc: func(context.Context, string, *change.Form, *user.User) error {
-				return make(change.ValidationErrors, 0)
+				return make(validation.Errors, 0)
 			},
 			code: codes.InvalidArgument,
 		},

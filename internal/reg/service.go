@@ -12,33 +12,13 @@ import (
 
 //go:generate mockgen -source=service.go -package=reg -destination=service.mock.go
 
-const (
-	validationErrMsg = "you have validation errors"
-)
-
 var (
 	// ErrEmailExists returns when given email is already
 	// present in database.
-	ErrEmailExists = errors.New("email not found")
+	ErrEmailExists = errors.New("email already exists")
 
 	uuidMx = sync.Mutex{}
 )
-
-// ValidationErrors holds validation errors
-// list.
-type ValidationErrors []ValidationError
-
-// Error implements error interface to return
-// slice as error for futher manipulations.
-func (v ValidationErrors) Error() string {
-	return validationErrMsg
-}
-
-// ValidationError holds field and message
-// of validation exception.
-type ValidationError struct {
-	Field, Message string
-}
 
 // Validater validates user fields.
 type Validater interface {
@@ -67,13 +47,11 @@ type Service struct {
 
 // NewService factory prepares service for
 // futher operations.
-func NewService(r Repository, i Informer) *Service {
+func NewService(r Repository, v Validater, i Informer) *Service {
 	s := Service{
 		Repository: r,
 		Informer:   i,
-		Validater: ozzo{
-			Repository: r,
-		},
+		Validater:  v,
 	}
 
 	return &s
@@ -127,12 +105,4 @@ type Form struct {
 	AccountID            string
 	Password             string
 	PasswordConfirmation string
-}
-
-type ozzo struct {
-	Repository
-}
-
-func (v ozzo) Validate(ctx context.Context, f *Form) error {
-	return nil
 }
