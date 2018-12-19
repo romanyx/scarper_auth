@@ -61,14 +61,14 @@ func (_m *MockInformer) EXPECT() *_MockInformerRecorder {
 	return _m.recorder
 }
 
-func (_m *MockInformer) Inform(ctx context.Context, u *user.User) error {
-	ret := _m.ctrl.Call(_m, "Inform", ctx, u)
+func (_m *MockInformer) Verify(ctx context.Context, u *user.User) error {
+	ret := _m.ctrl.Call(_m, "Verify", ctx, u)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockInformerRecorder) Inform(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Inform", arg0, arg1)
+func (_mr *_MockInformerRecorder) Verify(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Verify", arg0, arg1)
 }
 
 // Mock of Repository interface

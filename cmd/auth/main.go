@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rsa"
 	"database/sql"
 	"flag"
@@ -13,12 +12,12 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	_ "github.com/lib/pq"
 	"github.com/romanyx/scraper_auth/internal/auth"
+	grpcCli "github.com/romanyx/scraper_auth/internal/broker/grpc"
 	"github.com/romanyx/scraper_auth/internal/change"
-	grpcCli "github.com/romanyx/scraper_auth/internal/grpc"
+	"github.com/romanyx/scraper_auth/internal/notifier/smtp"
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/storage/postgres"
-	"github.com/romanyx/scraper_auth/internal/user"
 	"github.com/romanyx/scraper_auth/internal/validation"
 	"github.com/romanyx/scraper_auth/internal/verify"
 	authEng "github.com/romanyx/scraper_auth/kit/auth"
@@ -67,7 +66,7 @@ func main() {
 		log.Fatalf("main : Constructing authenticator : %v", err)
 	}
 
-	srv := setupServer(authenticator, db, *tokenExp)
+	srv := setupServer(authenticator, nil, db, *tokenExp)
 	s := grpc.NewServer()
 	proto.RegisterAuthServer(s, srv)
 	reflection.Register(s)
@@ -77,20 +76,14 @@ func main() {
 	}
 }
 
-func setupServer(ath *authEng.Authenticator, db *sql.DB, exp time.Duration) proto.AuthServer {
+func setupServer(ath *authEng.Authenticator, inf *smtp.Client, db *sql.DB, exp time.Duration) proto.AuthServer {
 	repo := postgres.NewRepository(db)
 	authSrv := auth.NewService(exp, repo, ath)
-	regSrv := reg.NewService(repo, validation.NewReg(repo), &informer{})
+	regSrv := reg.NewService(repo, validation.NewReg(repo), inf)
 	vrfSrv := verify.NewService(repo)
-	rstSrv := reset.NewService(repo, &informer{}, exp)
+	rstSrv := reset.NewService(repo, inf, exp)
 	chgSrv := change.NewService(repo, validation.NewChange())
 
 	srv := grpcCli.NewServer(regSrv, authSrv, vrfSrv, rstSrv, chgSrv)
 	return srv
-}
-
-type informer struct{}
-
-func (i *informer) Inform(context.Context, *user.User) error {
-	return nil
 }

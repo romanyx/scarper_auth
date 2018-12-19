@@ -104,7 +104,7 @@ func (r *Repository) Unique(ctx context.Context, email string) error {
 	return nil
 }
 
-const emailFindQuery = "SELECT id, password_hash, account_id, status FROM users WHERE email=:email"
+const emailFindQuery = "SELECT id, email, password_hash, account_id, status FROM users WHERE email=:email"
 
 // FindByEmail finds user by email.
 func (r *Repository) FindByEmail(ctx context.Context, email string, u *user.User) error {
@@ -116,7 +116,7 @@ func (r *Repository) FindByEmail(ctx context.Context, email string, u *user.User
 	var s string
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
 		"email": email,
-	}).Scan(&u.ID, &u.PasswordHash, &u.AccountID, &s); err != nil {
+	}).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.AccountID, &s); err != nil {
 		if err == sql.ErrNoRows {
 			return auth.ErrNotFound
 		}

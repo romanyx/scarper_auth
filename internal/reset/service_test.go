@@ -19,7 +19,7 @@ func Test_Service_Reset(t *testing.T) {
 	tests := []struct {
 		name       string
 		repoFunc   func(m *MockRepository)
-		informFunc func(context.Context, *user.User) error
+		informFunc func(context.Context, *user.User, string) error
 		wantErr    bool
 	}{
 		{
@@ -28,7 +28,7 @@ func Test_Service_Reset(t *testing.T) {
 				m.EXPECT().FindByEmail(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				m.EXPECT().Reset(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(cr, nil, nil)
 			},
-			informFunc: func(context.Context, *user.User) error {
+			informFunc: func(context.Context, *user.User, string) error {
 				return nil
 			},
 		},
@@ -53,7 +53,7 @@ func Test_Service_Reset(t *testing.T) {
 				m.EXPECT().FindByEmail(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				m.EXPECT().Reset(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, cr, nil)
 			},
-			informFunc: func(context.Context, *user.User) error {
+			informFunc: func(context.Context, *user.User, string) error {
 				return errors.New("mock error")
 			},
 			wantErr: true,
@@ -83,8 +83,8 @@ func Test_Service_Reset(t *testing.T) {
 	}
 }
 
-type informerFunc func(context.Context, *user.User) error
+type informerFunc func(context.Context, *user.User, string) error
 
-func (f informerFunc) Inform(ctx context.Context, u *user.User) error {
-	return f(ctx, u)
+func (f informerFunc) Change(ctx context.Context, u *user.User, t string) error {
+	return f(ctx, u, t)
 }

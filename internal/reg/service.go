@@ -27,7 +27,7 @@ type Validater interface {
 
 // Informer send token to verify email.
 type Informer interface {
-	Inform(ctx context.Context, u *user.User) error
+	Verify(ctx context.Context, u *user.User) error
 }
 
 // Repository allows to work with database.
@@ -85,7 +85,7 @@ func (s *Service) Registrate(ctx context.Context, f *Form, usr *user.User) error
 		return errors.Wrap(err, "find user")
 	}
 
-	if err := s.Inform(ctx, usr); err != nil {
+	if err := s.Verify(ctx, usr); err != nil {
 		rollback()
 		return errors.Wrap(err, "inform")
 	}

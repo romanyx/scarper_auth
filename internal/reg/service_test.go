@@ -113,7 +113,7 @@ func Test_Service(t *testing.T) {
 
 type informerFunc func(context.Context, *user.User) error
 
-func (f informerFunc) Inform(ctx context.Context, u *user.User) error {
+func (f informerFunc) Verify(ctx context.Context, u *user.User) error {
 	return f(ctx, u)
 }
 

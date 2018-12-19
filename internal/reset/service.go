@@ -20,9 +20,9 @@ var (
 	uuidMx = sync.Mutex{}
 )
 
-// Informer send token to verify email.
+// Informer send token to change password.
 type Informer interface {
-	Inform(ctx context.Context, u *user.User) error
+	Change(ctx context.Context, u *user.User, token string) error
 }
 
 // Repository allows to work with database.
@@ -64,7 +64,7 @@ func (s *Service) Reset(ctx context.Context, email string) error {
 		return errors.Wrap(err, "reset token")
 	}
 
-	if err := s.Informer.Inform(ctx, &u); err != nil {
+	if err := s.Informer.Change(ctx, &u, token); err != nil {
 		rollback()
 		return errors.Wrap(err, "inform user")
 	}

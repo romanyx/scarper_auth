@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/smtp"
 	"os"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	txdb "github.com/DATA-DOG/go-txdb"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/ory/dockertest"
+	smtpCli "github.com/romanyx/scraper_auth/internal/notifier/smtp"
 	"github.com/romanyx/scraper_auth/internal/storage/postgres/schema"
 	"github.com/romanyx/scraper_auth/kit/auth"
 	"github.com/romanyx/scraper_auth/kit/docker"
@@ -76,7 +78,10 @@ func TestMain(m *testing.M) {
 }
 
 func newServer(db *sql.DB) (string, func()) {
-	srv := setupServer(a, db, time.Hour)
+	auth := smtp.PlainAuth("", "test@romanyx.ru", "test6655321-", "smtp.yandex.ru")
+	c := smtpCli.NewClient(auth, "smtp.yandex.ru:25", "test@romanyx.ru")
+
+	srv := setupServer(a, c, db, time.Hour)
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

@@ -17,7 +17,7 @@ const (
 	changeData = `
 users:
   - id: 1
-    email: john@example.com
+    email: test@romanyx.ru 
     account_id: 492c9a6d-255e-4a61-a460-2d622d4c6e96
     password_hash: $2a$10$nhWT4xXRkk0aoqOMOs7UyOBJ1f/XXFGt5rYDBo9CAQnruBvg.U3d6
     status: VERIFIED

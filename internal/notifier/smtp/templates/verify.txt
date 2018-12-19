@@ -1,0 +1,12 @@
+Hello,
+
+Please verify your email address by clicking on the following link:
+
+https://scraper.io/email_verification/{{.Token}}
+
+If you did NOT make a Scraper registration request with this email address, do not click on the link above and please forward this notification to support@scraper.io.
+
+Sincerely,
+
+The Scraper Team
+
