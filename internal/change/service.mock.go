@@ -81,12 +81,12 @@ func (_mr *_MockRepositoryRecorder) ChangePassword(arg0, arg1, arg2 interface{})
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ChangePassword", arg0, arg1, arg2)
 }
 
-func (_m *MockRepository) FindByID(ctx context.Context, id int32, u *user.User) error {
-	ret := _m.ctrl.Call(_m, "FindByID", ctx, id, u)
+func (_m *MockRepository) Find(ctx context.Context, id int32, u *user.User) error {
+	ret := _m.ctrl.Call(_m, "Find", ctx, id, u)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockRepositoryRecorder) FindByID(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "FindByID", arg0, arg1, arg2)
+func (_mr *_MockRepositoryRecorder) Find(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Find", arg0, arg1, arg2)
 }

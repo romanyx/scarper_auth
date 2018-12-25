@@ -104,14 +104,14 @@ func (_mr *_MockRepositoryRecorder) Create(arg0, arg1 interface{}) *gomock.Call 
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Create", arg0, arg1)
 }
 
-func (_m *MockRepository) Find(ctx context.Context, accountID string, u *user.User) error {
-	ret := _m.ctrl.Call(_m, "Find", ctx, accountID, u)
+func (_m *MockRepository) FindByAccountID(ctx context.Context, accountID string, u *user.User) error {
+	ret := _m.ctrl.Call(_m, "FindByAccountID", ctx, accountID, u)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockRepositoryRecorder) Find(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Find", arg0, arg1, arg2)
+func (_mr *_MockRepositoryRecorder) FindByAccountID(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "FindByAccountID", arg0, arg1, arg2)
 }
 
 func (_m *MockRepository) Unique(ctx context.Context, email string) error {

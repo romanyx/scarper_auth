@@ -46,6 +46,7 @@ func (r *Repository) Create(ctx context.Context, u *user.NewUser) (func() error,
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
 		"account_id":    u.AccountID,
@@ -60,14 +61,15 @@ func (r *Repository) Create(ctx context.Context, u *user.NewUser) (func() error,
 	return tx.Commit, tx.Rollback, nil
 }
 
-const findQuery = "SELECT id, account_id, email, status, token, password_hash, created_at, updated_at FROM users WHERE account_id=:account_id"
+const findByAcccountIDQuery = "SELECT id, account_id, email, status, token, password_hash, created_at, updated_at FROM users WHERE account_id=:account_id"
 
-// Find finds user by email.
-func (r *Repository) Find(ctx context.Context, accountID string, u *user.User) error {
-	stmt, err := r.db.PrepareNamed(findQuery)
+// FindByAccountID finds user by account id.
+func (r *Repository) FindByAccountID(ctx context.Context, accountID string, u *user.User) error {
+	stmt, err := r.db.PrepareNamed(findByAcccountIDQuery)
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
 		"account_id": accountID,
@@ -89,6 +91,7 @@ func (r *Repository) Unique(ctx context.Context, email string) error {
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	var c int
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
@@ -112,6 +115,7 @@ func (r *Repository) FindByEmail(ctx context.Context, email string, u *user.User
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	var s string
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
@@ -138,6 +142,7 @@ func (r *Repository) FindByToken(ctx context.Context, token string, u *user.User
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
 		"token": token,
@@ -159,6 +164,7 @@ func (r *Repository) Verify(ctx context.Context, id int32) error {
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
 		"id": id,
@@ -177,6 +183,7 @@ func (r *Repository) FindResetToken(ctx context.Context, token string, t *change
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
 		"token": token,
@@ -198,6 +205,7 @@ func (r *Repository) ChangePassword(ctx context.Context, id int32, passwordHash 
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
 		"id":            id,
@@ -211,12 +219,13 @@ func (r *Repository) ChangePassword(ctx context.Context, id int32, passwordHash 
 
 const findByIDQuery = "SELECT id, account_id, email, status, token, password_hash, created_at, updated_at FROM users WHERE id=:id"
 
-// FindByID finds user by id.
-func (r *Repository) FindByID(ctx context.Context, id int32, u *user.User) error {
+// Find finds user by id.
+func (r *Repository) Find(ctx context.Context, id int32, u *user.User) error {
 	stmt, err := r.db.PrepareNamed(findByIDQuery)
 	if err != nil {
 		return errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if err := stmt.QueryRowContext(ctx, map[string]interface{}{
 		"id": id,
@@ -243,6 +252,7 @@ func (r *Repository) Reset(ctx context.Context, userID int32, token string, exp 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "prepare named")
 	}
+	defer stmt.Close()
 
 	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
 		"user_id":    userID,

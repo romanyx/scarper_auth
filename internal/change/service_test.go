@@ -28,7 +28,7 @@ func Test_Service_Change(t *testing.T) {
 				})
 				call.Return(nil)
 				m.EXPECT().ChangePassword(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				m.EXPECT().FindByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 			validateFunc: func(context.Context, *Form) error {
 				return nil
@@ -90,7 +90,7 @@ func Test_Service_Change(t *testing.T) {
 				})
 				call.Return(nil)
 				m.EXPECT().ChangePassword(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				m.EXPECT().FindByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
+				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
 			},
 			validateFunc: func(context.Context, *Form) error {
 				return nil

@@ -20,7 +20,7 @@ var (
 type Repository interface {
 	FindByToken(context.Context, string, *user.User) error
 	Verify(context.Context, int32) error
-	Find(context.Context, string, *user.User) error
+	Find(context.Context, int32, *user.User) error
 }
 
 // Service holds data requird to verify user.
@@ -48,7 +48,7 @@ func (s *Service) Verify(ctx context.Context, token string, u *user.User) error 
 		return errors.Wrap(err, "verify user")
 	}
 
-	if err := s.Repository.Find(ctx, u.AccountID, u); err != nil {
+	if err := s.Repository.Find(ctx, u.ID, u); err != nil {
 		return errors.Wrap(err, "find user")
 	}
 

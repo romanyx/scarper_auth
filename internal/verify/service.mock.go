@@ -50,7 +50,7 @@ func (_mr *_MockRepositoryRecorder) Verify(arg0, arg1 interface{}) *gomock.Call 
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Verify", arg0, arg1)
 }
 
-func (_m *MockRepository) Find(_param0 context.Context, _param1 string, _param2 *user.User) error {
+func (_m *MockRepository) Find(_param0 context.Context, _param1 int32, _param2 *user.User) error {
 	ret := _m.ctrl.Call(_m, "Find", _param0, _param1, _param2)
 	ret0, _ := ret[0].(error)
 	return ret0

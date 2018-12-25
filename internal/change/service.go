@@ -46,7 +46,7 @@ type Validater interface {
 type Repository interface {
 	FindResetToken(ctx context.Context, token string, r *Token) error
 	ChangePassword(ctx context.Context, id int32, passwordHash string) error
-	FindByID(ctx context.Context, id int32, u *user.User) error
+	Find(ctx context.Context, id int32, u *user.User) error
 }
 
 // Service holds data required to verify user.
@@ -90,7 +90,7 @@ func (s *Service) Change(ctx context.Context, token string, form *Form, u *user.
 		return errors.Wrap(err, "change password")
 	}
 
-	if err := s.Repository.FindByID(ctx, t.UserID, u); err != nil {
+	if err := s.Repository.Find(ctx, t.UserID, u); err != nil {
 		return errors.Wrap(err, "find by id")
 	}
 

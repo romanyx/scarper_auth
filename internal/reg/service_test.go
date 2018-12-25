@@ -34,7 +34,7 @@ func Test_Service(t *testing.T) {
 			},
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(commit, nil, nil)
-				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().FindByAccountID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 		},
 		{
@@ -62,7 +62,7 @@ func Test_Service(t *testing.T) {
 			},
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, rollback, nil)
-				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
+				m.EXPECT().FindByAccountID(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
 			},
 			wantErr: true,
 		},
@@ -73,7 +73,7 @@ func Test_Service(t *testing.T) {
 			},
 			repositoryFunc: func(m *MockRepository) {
 				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, rollback, nil)
-				m.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().FindByAccountID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 			informFunc: func(context.Context, *user.User) error {
 				return errors.New("mock error")

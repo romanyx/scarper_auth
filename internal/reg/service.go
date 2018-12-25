@@ -33,7 +33,7 @@ type Informer interface {
 // Repository allows to work with database.
 type Repository interface {
 	Create(ctx context.Context, u *user.NewUser) (func() error, func() error, error)
-	Find(ctx context.Context, accountID string, u *user.User) error
+	FindByAccountID(ctx context.Context, accountID string, u *user.User) error
 	Unique(ctx context.Context, email string) error
 }
 
@@ -80,7 +80,7 @@ func (s *Service) Registrate(ctx context.Context, f *Form, usr *user.User) error
 		return errors.Wrap(err, "create user")
 	}
 
-	if err := s.Find(ctx, f.AccountID, usr); err != nil {
+	if err := s.FindByAccountID(ctx, f.AccountID, usr); err != nil {
 		rollback()
 		return errors.Wrap(err, "find user")
 	}
