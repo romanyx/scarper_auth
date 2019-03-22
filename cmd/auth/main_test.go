@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	caseTimeout = 5 * time.Second
+	caseTimeout = 3 * time.Second
 )
 
 var (
