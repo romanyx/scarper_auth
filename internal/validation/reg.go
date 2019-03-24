@@ -32,9 +32,16 @@ func NewReg(u Uniquer) *Reg {
 func (v *Reg) Validate(ctx context.Context, f *reg.Form) error {
 	var es Errors
 
-	if err := validation.Validate(f.Email, is.Email); err != nil {
+	if err := validation.Validate(f.Email, validation.Required, is.Email); err != nil {
 		es = append(es, Error{
 			Field:   "email",
+			Message: err.Error(),
+		})
+	}
+
+	if err := validation.Validate(f.AccountID, validation.Required); err != nil {
+		es = append(es, Error{
+			Field:   "account_id",
 			Message: err.Error(),
 		})
 	}

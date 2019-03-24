@@ -13,6 +13,7 @@ import (
 	"github.com/romanyx/scraper_auth/internal/validation"
 	"github.com/romanyx/scraper_auth/internal/verify"
 	"github.com/romanyx/scraper_auth/proto"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -77,7 +78,7 @@ func (s *Server) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.U
 	if err := s.RegSrv.Registrate(ctx, &f, &u); err != nil {
 		switch v := errors.Cause(err).(type) {
 		case validation.Errors:
-			return nil, status.Error(codes.InvalidArgument, v.Error())
+			return nil, statusFromErrors(v)
 		default:
 			return nil, status.Error(codes.Internal, internalErrMsg)
 		}
@@ -86,6 +87,30 @@ func (s *Server) SignUp(ctx context.Context, req *proto.SignUpRequest) (*proto.U
 	var r proto.UserResponse
 	setResp(&r, &u)
 	return &r, nil
+}
+
+func statusFromErrors(validations validation.Errors) error {
+	violations := make([]*epb.QuotaFailure_Violation, len(validations))
+
+	for i, v := range validations {
+		violation := epb.QuotaFailure_Violation{
+			Subject:     v.Field,
+			Description: v.Message,
+		}
+
+		violations[i] = &violation
+	}
+
+	st := status.New(codes.InvalidArgument, validations.Error())
+	ds, err := st.WithDetails(&epb.QuotaFailure{
+		Violations: violations,
+	})
+
+	if err != nil {
+		return st.Err()
+	}
+
+	return ds.Err()
 }
 
 func setForm(req *proto.SignUpRequest, f *reg.Form) {
