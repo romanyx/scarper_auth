@@ -32,7 +32,7 @@ func TestSignUp(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
 			defer cancel()
 			_, err := cli.SignUp(ctx, &proto.SignUpRequest{
-				Email:                "john@example.com",
+				Email:                "work@romanyx.ru",
 				AccountId:            "492c9a6d-255e-4a61-a460-2d622d4c6e96",
 				Password:             "password",
 				PasswordConfirmation: "password",

@@ -23,3 +23,14 @@ cover: mocks
 		go tool cover -func cover.out && \
 		rm cover.out.tmp && \
 		rm cover.out
+
+build:
+	cd "$$GOPATH/src/github.com/romanyx/scraper_auth"
+	docker build \
+		-t scraper/auth:0.0.1 \
+		-f docker/Dockerfile \
+		--build-arg VCS_REF=`git rev-parse HEAD` \
+		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
+		.
+
+

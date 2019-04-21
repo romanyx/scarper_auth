@@ -33,7 +33,7 @@ func TestReset(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
 			defer cancel()
 			resp, err := cli.Reset(ctx, &proto.PasswordResetRequest{
-				Email: "test@romanyx.ru",
+				Email: "work@romanyx.ru",
 			})
 			assert.Nil(t, err)
 			assert.NotNil(t, resp)

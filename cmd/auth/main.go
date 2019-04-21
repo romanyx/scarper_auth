@@ -16,15 +16,22 @@ import (
 
 	_ "net/http/pprof"
 
-	_ "github.com/lib/pq"
-
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/heptiolabs/healthcheck"
+	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/sirupsen/logrus"
+	"go.opencensus.io/examples/exporter"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/stats/view"
+	"google.golang.org/grpc"
+
 	"github.com/romanyx/scraper_auth/internal/auth"
 	grpcCli "github.com/romanyx/scraper_auth/internal/broker/grpc"
 	"github.com/romanyx/scraper_auth/internal/change"
-	"github.com/romanyx/scraper_auth/internal/notifier/smtp"
+	sendgridCli "github.com/romanyx/scraper_auth/internal/notifier/sendgrid"
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/storage/postgres"
@@ -32,11 +39,6 @@ import (
 	"github.com/romanyx/scraper_auth/internal/verify"
 	authEng "github.com/romanyx/scraper_auth/kit/auth"
 	"github.com/romanyx/scraper_auth/proto"
-	"github.com/sirupsen/logrus"
-	"go.opencensus.io/examples/exporter"
-	"go.opencensus.io/plugin/ocgrpc"
-	"go.opencensus.io/stats/view"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -57,6 +59,7 @@ func main() {
 		tokenExp       = flag.Duration("expire", time.Hour, "token live time")
 		privateKeyFile = flag.String("key", "", "private key file path")
 		keyID          = flag.String("id", "", "private key id")
+		sendgridKey    = flag.String("sendgrid-key", "", "sendgrid api key")
 		healthAddr     = flag.String("health", ":8081", "health check addr")
 		debugAddr      = flag.String("debug", ":1234", "debug server addr")
 	)
@@ -97,8 +100,13 @@ func main() {
 	// Setup gRPC server.
 	grpcServer := grpc.NewServer(grpc.StatsHandler(&ocgrpc.ServerHandler{}))
 
+	// Setup sendgrid
+	sClient := sendgrid.NewSendClient(*sendgridKey)
+	fromEmail := mail.NewEmail("Scraper Team", "notify@scraper.io")
+	informer := sendgridCli.NewClient(sClient, fromEmail)
+
 	// Setup handlers.
-	srv := setupServer(authenticator, nil, db, *tokenExp)
+	srv := setupServer(authenticator, informer, db, *tokenExp)
 	proto.RegisterAuthServer(grpcServer, srv)
 
 	lis, err := net.Listen("tcp", *addr)
@@ -155,7 +163,7 @@ func main() {
 	}
 }
 
-func setupServer(ath *authEng.Authenticator, inf *smtp.Client, db *sql.DB, exp time.Duration) proto.AuthServer {
+func setupServer(ath *authEng.Authenticator, inf *sendgridCli.Client, db *sql.DB, exp time.Duration) proto.AuthServer {
 	logger := logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: &logrus.JSONFormatter{},
@@ -166,19 +174,19 @@ func setupServer(ath *authEng.Authenticator, inf *smtp.Client, db *sql.DB, exp t
 	repo := postgres.NewRepository(db)
 
 	regSrv := reg.NewService(repo, validation.NewReg(repo), inf)
-	wrpReg := grpcCli.NewRegistraterWithTracing(grpcCli.NewRegistraterWithLogrus(regSrv, entry))
+	wrpReg := grpcCli.NewRegistraterWithLogrus(regSrv, entry)
 
 	authSrv := auth.NewService(exp, repo, ath)
-	wrpAuth := grpcCli.NewAuthenticaterWithTracing(grpcCli.NewAuthenticaterWithLogrus(authSrv, entry))
+	wrpAuth := grpcCli.NewAuthenticaterWithLogrus(authSrv, entry)
 
 	vrfSrv := verify.NewService(repo)
-	wrpVrf := grpcCli.NewVerifierWithTracing(grpcCli.NewVerifierWithLogrus(vrfSrv, entry))
+	wrpVrf := grpcCli.NewVerifierWithLogrus(vrfSrv, entry)
 
 	rstSrv := reset.NewService(repo, inf, exp)
-	wrpRst := grpcCli.NewPwdReseterWithTracing(grpcCli.NewPwdReseterWithLogrus(rstSrv, entry))
+	wrpRst := grpcCli.NewPwdReseterWithLogrus(rstSrv, entry)
 
 	chgSrv := change.NewService(repo, validation.NewChange())
-	wrpChg := grpcCli.NewPwdChangerWithTracing(grpcCli.NewPwdChangerWithLogrus(chgSrv, entry))
+	wrpChg := grpcCli.NewPwdChangerWithLogrus(chgSrv, entry)
 
 	srv := grpcCli.NewServer(wrpReg, wrpAuth, wrpVrf, wrpRst, wrpChg)
 	return srv

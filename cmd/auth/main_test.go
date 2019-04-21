@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/smtp"
 	"os"
 	"testing"
 	"time"
@@ -15,13 +14,16 @@ import (
 	txdb "github.com/DATA-DOG/go-txdb"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/ory/dockertest"
-	smtpCli "github.com/romanyx/scraper_auth/internal/notifier/smtp"
+	sendgridCli "github.com/romanyx/scraper_auth/internal/notifier/sendgrid"
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+
 	"github.com/romanyx/scraper_auth/internal/storage/postgres/schema"
 	"github.com/romanyx/scraper_auth/kit/auth"
 	"github.com/romanyx/scraper_auth/kit/docker"
 	"github.com/romanyx/scraper_auth/proto"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 const (
@@ -78,8 +80,9 @@ func TestMain(m *testing.M) {
 }
 
 func newServer(db *sql.DB) (string, func()) {
-	auth := smtp.PlainAuth("", "test@romanyx.ru", "test6655321-", "smtp.yandex.ru")
-	c := smtpCli.NewClient(auth, "smtp.yandex.ru:25", "test@romanyx.ru")
+	sClient := sendgrid.NewSendClient("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")
+	fromEmail := mail.NewEmail("Scraper Team", "test@scraper.io")
+	c := sendgridCli.NewClient(sClient, fromEmail)
 
 	srv := setupServer(a, c, db, time.Hour)
 

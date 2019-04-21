@@ -1,0 +1,12 @@
+Hello,
+
+You can change your password by clicking on the following link:
+
+https://scraper.io/password_change/{{.Token}}
+
+If you did NOT make a Scraper change password request with this email address, do not click on the link above and please forward this notification to support@scraper.io.
+
+Sincerely,
+
+The Scraper Team
+
