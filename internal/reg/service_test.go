@@ -33,8 +33,7 @@ func Test_Service(t *testing.T) {
 				return nil
 			},
 			repositoryFunc: func(m *MockRepository) {
-				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(commit, nil, nil)
-				m.EXPECT().FindByAccountID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(commit, nil, nil)
 			},
 		},
 		{
@@ -51,18 +50,7 @@ func Test_Service(t *testing.T) {
 				return nil
 			},
 			repositoryFunc: func(m *MockRepository) {
-				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, nil, errors.New("mock error"))
-			},
-			wantErr: true,
-		},
-		{
-			name: "find",
-			validateFunc: func(context.Context, *Form) error {
-				return nil
-			},
-			repositoryFunc: func(m *MockRepository) {
-				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, rollback, nil)
-				m.EXPECT().FindByAccountID(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("mock error"))
+				m.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil, errors.New("mock error"))
 			},
 			wantErr: true,
 		},
@@ -72,8 +60,7 @@ func Test_Service(t *testing.T) {
 				return nil
 			},
 			repositoryFunc: func(m *MockRepository) {
-				m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, rollback, nil)
-				m.EXPECT().FindByAccountID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, rollback, nil)
 			},
 			informFunc: func(context.Context, *user.User) error {
 				return errors.New("mock error")

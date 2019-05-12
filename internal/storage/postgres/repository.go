@@ -33,29 +33,18 @@ func NewRepository(db *sql.DB) *Repository {
 	return &r
 }
 
-const createQuery = `INSERT INTO users (email, status, token, account_id, password_hash) VALUES (:email, :status, :token, :account_id, :password_hash)`
+const createQuery = `INSERT INTO users (email, status, token, account_id, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, account_id, email, token, status, created_at, updated_at`
 
 // Create insert user into database.
-func (r *Repository) Create(ctx context.Context, u *user.NewUser) (func() error, func() error, error) {
+func (r *Repository) Create(ctx context.Context, u *user.NewUser, usr *user.User) (func() error, func() error, error) {
 	tx, err := r.db.Beginx()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "begin tx")
 	}
 
-	stmt, err := tx.PrepareNamed(createQuery)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "prepare named")
-	}
-	defer stmt.Close()
-
-	if _, err := stmt.ExecContext(ctx, map[string]interface{}{
-		"account_id":    u.AccountID,
-		"email":         u.Email,
-		"status":        u.Status,
-		"password_hash": u.PasswordHash,
-		"token":         u.Token,
-	}); err != nil {
-		return nil, nil, errors.Wrap(err, "exec context")
+	if err := tx.QueryRowContext(ctx, createQuery, u.Email, u.Status, u.Token, u.AccountID, u.PasswordHash).
+		Scan(&usr.ID, &usr.AccountID, &usr.Email, &usr.Token, &usr.Status, &usr.CreatedAt, &usr.UpdatedAt); err != nil {
+		return nil, nil, errors.Wrap(err, "query context scan")
 	}
 
 	return tx.Commit, tx.Rollback, nil

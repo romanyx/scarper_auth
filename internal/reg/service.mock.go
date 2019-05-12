@@ -92,16 +92,16 @@ func (_m *MockRepository) EXPECT() *_MockRepositoryRecorder {
 	return _m.recorder
 }
 
-func (_m *MockRepository) Create(ctx context.Context, u *user.NewUser) (func() error, func() error, error) {
-	ret := _m.ctrl.Call(_m, "Create", ctx, u)
+func (_m *MockRepository) Create(ctx context.Context, u *user.NewUser, usr *user.User) (func() error, func() error, error) {
+	ret := _m.ctrl.Call(_m, "Create", ctx, u, usr)
 	ret0, _ := ret[0].(func() error)
 	ret1, _ := ret[1].(func() error)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-func (_mr *_MockRepositoryRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Create", arg0, arg1)
+func (_mr *_MockRepositoryRecorder) Create(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Create", arg0, arg1, arg2)
 }
 
 func (_m *MockRepository) FindByAccountID(ctx context.Context, accountID string, u *user.User) error {

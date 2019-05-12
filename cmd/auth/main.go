@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rsa"
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -17,13 +18,14 @@ import (
 	_ "net/http/pprof"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-migrate/migrate"
 	"github.com/heptiolabs/healthcheck"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sendgrid/rest"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"github.com/sirupsen/logrus"
-	"go.opencensus.io/examples/exporter"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"google.golang.org/grpc"
@@ -35,6 +37,7 @@ import (
 	"github.com/romanyx/scraper_auth/internal/reg"
 	"github.com/romanyx/scraper_auth/internal/reset"
 	"github.com/romanyx/scraper_auth/internal/storage/postgres"
+	"github.com/romanyx/scraper_auth/internal/storage/postgres/schema"
 	"github.com/romanyx/scraper_auth/internal/validation"
 	"github.com/romanyx/scraper_auth/internal/verify"
 	authEng "github.com/romanyx/scraper_auth/kit/auth"
@@ -63,6 +66,7 @@ func main() {
 		healthAddr     = flag.String("health", ":8081", "health check addr")
 		debugAddr      = flag.String("debug", ":1234", "debug server addr")
 	)
+	flag.Parse()
 
 	// Setup db connection
 	db, err := sql.Open("postgres", *dsn)
@@ -70,6 +74,12 @@ func main() {
 		log.Fatalf("failed to connect db: %v\n", err)
 	}
 	defer db.Close()
+
+	if err := schema.Migrate(db); err != nil {
+		if errors.Cause(err) != migrate.ErrNoChange {
+			log.Fatal(errors.Wrap(err, "failed to mirgrate db"))
+		}
+	}
 
 	// Authentication setup.
 	keyContents, err := ioutil.ReadFile(*privateKeyFile)
@@ -90,7 +100,7 @@ func main() {
 
 	// Register stats and trace exporters to export
 	// the collected data.
-	view.RegisterExporter(&exporter.PrintExporter{})
+	// view.RegisterExporter(&exporter.PrintExporter{})
 
 	// Register the views to collect server request count.
 	if err := view.Register(ocgrpc.DefaultServerViews...); err != nil {
@@ -101,6 +111,16 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.StatsHandler(&ocgrpc.ServerHandler{}))
 
 	// Setup sendgrid
+	sendgrid.DefaultClient = &rest.Client{
+		HTTPClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+			Timeout: 5 * time.Second,
+		},
+	}
 	sClient := sendgrid.NewSendClient(*sendgridKey)
 	fromEmail := mail.NewEmail("Scraper Team", "notify@scraper.io")
 	informer := sendgridCli.NewClient(sClient, fromEmail)
