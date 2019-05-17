@@ -19,6 +19,7 @@ func Test_Reg_Validate(t *testing.T) {
 		{
 			name: "ok",
 			f: reg.Form{
+				AccountID:            "accountID",
 				Email:                "unique@email.com",
 				Password:             "secret",
 				PasswordConfirmation: "secret",
@@ -30,6 +31,7 @@ func Test_Reg_Validate(t *testing.T) {
 		{
 			name: "not email",
 			f: reg.Form{
+				AccountID:            "accountID",
 				Email:                "unique",
 				Password:             "secret",
 				PasswordConfirmation: "secret",
@@ -48,6 +50,7 @@ func Test_Reg_Validate(t *testing.T) {
 		{
 			name: "not unique",
 			f: reg.Form{
+				AccountID:            "accountID",
 				Email:                "unique@email.com",
 				Password:             "secret",
 				PasswordConfirmation: "secret",
@@ -66,6 +69,7 @@ func Test_Reg_Validate(t *testing.T) {
 		{
 			name: "passwords mismatch",
 			f: reg.Form{
+				AccountID:            "accountID",
 				Email:                "unique@email.com",
 				Password:             "secret1",
 				PasswordConfirmation: "secret",
@@ -88,6 +92,7 @@ func Test_Reg_Validate(t *testing.T) {
 		{
 			name: "passwords length",
 			f: reg.Form{
+				AccountID:            "accountID",
 				Email:                "unique@email.com",
 				Password:             "sec",
 				PasswordConfirmation: "sec",
