@@ -14,7 +14,7 @@ mocks:
 schema:
 	cd internal/storage/postgres/schema && go generate
 
-test: mocks
+test:
 	go test -v -race `go list ./... | grep -v kit | grep -v proto` 
 
 cover: mocks

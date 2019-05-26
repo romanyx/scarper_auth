@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  test:
+    machine:
+      image: circleci/classic:latest
+      environment:
+        GO111MODULE: "on"
+    steps:  
+      - add_ssh_keys:
+          fingerprints:
+            - "43:4d:c3:6b:c9:b6:f1:5f:7f:cb:e7:21:a0:48:33:07"
+            - "1d:fa:f7:57:bb:d7:35:b2:93:52:61:f4:cd:fb:ad:75"
+      - checkout
+      - run: 
+          name: Install Git
+          command: |
+            git submodule sync
+            git submodule update --init
+      - run:
+          name: Intall golang
+          command: |
+            sudo rm -rf /usr/local/go
+            wget -c https://dl.google.com/go/go1.12.5.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.12.5.linux-amd64.tar.gz
+            export PATH=$PATH:/usr/local/go/bin
+      - run:
+          name: Run tests
+          command: make test
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
