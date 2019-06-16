@@ -112,6 +112,29 @@ func Test_Reg_Validate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "passwords empty",
+			f: reg.Form{
+				AccountID:            "accountID",
+				Email:                "unique@email.com",
+				Password:             "",
+				PasswordConfirmation: "",
+			},
+			uniqueFunc: func(context.Context, string) error {
+				return nil
+			},
+			wantErr: true,
+			expect: Errors{
+				Error{
+					Field:   "password",
+					Message: "cannot be blank",
+				},
+				Error{
+					Field:   "password_confirmation",
+					Message: "cannot be blank",
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

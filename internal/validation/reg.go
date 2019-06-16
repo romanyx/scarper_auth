@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"fmt"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -58,14 +59,16 @@ func (v *Reg) Validate(ctx context.Context, f *reg.Form) error {
 		}
 	}
 
-	if err := validation.Validate(f.Password, validation.Length(6, 32)); err != nil {
+	fmt.Println(f.Password, f.PasswordConfirmation)
+
+	if err := validation.Validate(f.Password, validation.Required, validation.Length(6, 32)); err != nil {
 		es = append(es, Error{
 			Field:   "password",
 			Message: err.Error(),
 		})
 	}
 
-	if err := validation.Validate(f.PasswordConfirmation, validation.Length(6, 32)); err != nil {
+	if err := validation.Validate(f.PasswordConfirmation, validation.Required, validation.Length(6, 32)); err != nil {
 		es = append(es, Error{
 			Field:   "password_confirmation",
 			Message: err.Error(),
